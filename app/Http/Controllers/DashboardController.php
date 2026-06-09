@@ -18,9 +18,6 @@ class DashboardController extends Controller
     public function index()
     {
         $data = $this->dashboardRepository->index();
-        return response()->json([
-            'status' => true,
-             'data' => DashboardResource::make($data),
-        ], 200);
+        return $this->successResponse(DashboardResource::make($data), 'Dashboard stats retrieved successfully');
     }
 }
