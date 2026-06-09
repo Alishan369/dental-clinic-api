@@ -11,89 +11,67 @@ use Illuminate\Support\Collection;
 
 class PatientRepository implements PatientRepositoryInterface
 {
-    public function paginate(int $perPage = 20): LengthAwarePaginator
+    public function paginate(array $request): LengthAwarePaginator
     {
-        return Patient::with(['appointments.doctor', 'diseases'])->latest()->paginate($perPage);
+        $search = $request['search'] ?? null;
+        $perPage = $request['per_page'] ?? 20;
+
+        $patients = Patient::with(['appointments.doctor', 'diseases'])
+            ->when($search, function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%');
+            })
+            ->latest()
+            ->paginate($perPage);
+
+        return $patients;
     }
 
     public function find(string $id): ?Patient
     {
-        return Patient::with(['appointments.doctor', 'diseases'])->find($id);
+        return Patient::with(['appointments.doctor', 'diseases', 'payments'])->find($id);
     }
 
     public function store(array $requestData): Patient
     {
-        return DB::transaction(function () use ($requestData) {
+            $patientCode = 'PAT-' . str_pad(Patient::withTrashed()->count() + 1, 6, '0', STR_PAD_LEFT);
+            while (Patient::where('patient_code', $patientCode)->exists()) {
+                $patientCode = 'PAT-' . strtoupper(bin2hex(random_bytes(3)));
+            }
+
             $patient = Patient::create([
-                'name'    => $requestData['name'],
-                'email'   => $requestData['email'] ?? null,
-                'phone'   => $requestData['phone'] ?? null,
-                'address' => $requestData['address'] ?? null,
+                'patient_code' => $patientCode,
+                'name'         => $requestData['name'],
+                'email'        => $requestData['email'] ?? null,
+                'phone'        => $requestData['phone'] ?? null,
+                'address'      => $requestData['address'] ?? null,
+                'dob'          => $requestData['dob'] ?? null,
+                'gender'       => $requestData['gender'] ?? null,
             ]);
 
-            if (!empty($requestData['appointments'])) {
-                foreach ($requestData['appointments'] as $appointment) {
-                    $patient->appointments()->create([
-                        'doctor_id'        => $appointment['doctor_id'],
-                        'appointment_date' => $appointment['appointment_date'],
-                        'appointment_time' => $appointment['appointment_time'] ?? null,
-                        'status'           => 'scheduled',
-                    ]);
-                }
+            if (isset($requestData['disease_ids']) && is_array($requestData['disease_ids'])) {
+                $patient->diseases()->sync($requestData['disease_ids']);
             }
 
-            if (!empty($requestData['diseases'])) {
-                $diseaseData = [];
-                foreach ($requestData['diseases'] as $disease) {
-                    $diseaseData[$disease['id']] = [
-                        'notes' => $disease['notes'] ?? null,
-                    ];
-                }
-                $patient->diseases()->sync($diseaseData);
-            }
-
-            return $patient->load('appointments.doctor', 'diseases');
-        });
+            return $patient;
     }
 
     public function update(array $requestData, string $id): Patient
     {
-        return DB::transaction(function () use ($requestData, $id) {
-            $patient = Patient::findOrFail($id);
+        $patient = Patient::findOrFail($id);
+        $patient->update([
+            'name'    => $requestData['name'] ?? $patient->name,
+            'email'   => $requestData['email'] ?? $patient->email,
+            'phone'   => $requestData['phone'] ?? $patient->phone,
+            'address' => $requestData['address'] ?? $patient->address,
+            'dob'     => $requestData['dob'] ?? $patient->dob,
+            'gender'  => $requestData['gender'] ?? $patient->gender,
+        ]);
 
-            $patient->update([
-                'name'    => $requestData['name'] ?? $patient->name,
-                'email'   => $requestData['email'] ?? $patient->email,
-                'phone'   => $requestData['phone'] ?? $patient->phone,
-                'address' => $requestData['address'] ?? $patient->address,
-            ]);
+        if (isset($requestData['disease_ids']) && is_array($requestData['disease_ids'])) {
+            $patient->diseases()->sync($requestData['disease_ids']);
+        }
 
-            if (isset($requestData['appointments'])) {
-                // Clear existing appointments for this patient if we're syncing
-                $patient->appointments()->delete();
-
-                foreach ($requestData['appointments'] as $appointment) {
-                    $patient->appointments()->create([
-                        'doctor_id'        => $appointment['doctor_id'],
-                        'appointment_date' => $appointment['appointment_date'],
-                        'appointment_time' => $appointment['appointment_time'] ?? null,
-                        'status'           => 'scheduled',
-                    ]);
-                }
-            }
-
-            if (isset($requestData['diseases'])) {
-                $diseaseData = [];
-                foreach ($requestData['diseases'] as $disease) {
-                    $diseaseData[$disease['id']] = [
-                        'notes' => $disease['notes'] ?? null,
-                    ];
-                }
-                $patient->diseases()->sync($diseaseData);
-            }
-
-            return $patient->load('appointments.doctor', 'diseases');
-        });
+        return $patient;
     }
 
     public function destroy(string $id): bool

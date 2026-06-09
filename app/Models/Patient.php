@@ -4,29 +4,50 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Patient extends Model
 {
-    use HasUuids;
-    protected $table = 'patients';
+    use HasUuids, SoftDeletes;
 
-    protected $fillable = ['id', 'name', 'email', 'phone', 'address'];
-
-    public $incrementing = false;
-    protected $keyType = 'string';
-
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+    protected $fillable = [
+        'patient_code', 'name', 'phone', 'email', 'address', 'dob', 'gender',
     ];
 
-    public function appointments()
+    protected $casts = [
+        'dob' => 'date',
+    ];
+
+    public function appointments(): HasMany
     {
-        return $this->hasMany(Appointment::class, 'patient_id');
+        return $this->hasMany(Appointment::class);
+    }
+
+    public function patientTreatments(): HasMany
+    {
+        return $this->hasMany(PatientTreatment::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function dentalRecords(): HasMany
+    {
+        return $this->hasMany(DentalRecord::class);
+    }
+
+    public function prescriptions(): HasMany
+    {
+        return $this->hasMany(Prescription::class);
     }
 
     public function diseases()
     {
-        return $this->belongsToMany(Disease::class, 'patient_diseases', 'patient_id', 'disease_id');
+        return $this->belongsToMany(Disease::class, 'patient_diseases')
+                    ->withPivot('notes', 'other_disease_name')
+                    ->withTimestamps();
     }
 }
