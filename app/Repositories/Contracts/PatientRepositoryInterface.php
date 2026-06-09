@@ -6,7 +6,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface PatientRepositoryInterface
 {
-    public function paginate(int $perPage = 20): LengthAwarePaginator;
+    public function paginate(array $request): LengthAwarePaginator;
 
     public function find(string $id);
 
