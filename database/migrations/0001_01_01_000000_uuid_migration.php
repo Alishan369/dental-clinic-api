@@ -14,6 +14,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::statement('DROP EXTENSION uuid-ossp');
+        DB::statement('DROP EXTENSION IF EXISTS "uuid-ossp";');
     }
 };

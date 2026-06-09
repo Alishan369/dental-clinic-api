@@ -7,27 +7,22 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('patients', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('uuid_generate_v4()'));;
-
+            $table->uuid('id')->primary()->default(DB::raw('uuid_generate_v4()'));
+            $table->string('patient_code')->unique()->index();
             $table->string('name');
             $table->string('phone');
-            $table->string('email')->nullable();
+            $table->string('email')->unique()->nullable();
             $table->text('address')->nullable();
-
+            $table->date('dob')->nullable();
+            $table->enum('gender', ['male', 'female', 'other'])->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('patients');
