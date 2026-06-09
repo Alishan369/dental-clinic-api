@@ -16,14 +16,24 @@ class PatientResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'patient_code' => $this->patient_code,
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
             'address' => $this->address,
-            'appointments' => AppointmentResource::collection($this->whenLoaded('appointments')),
-            'diseases' => DiseaseResource::collection($this->whenLoaded('diseases')),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'dob' => $this->dob ? $this->dob->format('d-M-Y') : null,
+            'gender' => $this->gender ? ucfirst($this->gender) : null,
+            'age' => $this->dob ? \Carbon\Carbon::parse($this->dob)->age : null,
+            'balance' => $this->payments ? $this->payments->sum('balance_amount') : 0,
+            'nextAppointment' => $this->appointments
+                ? $this->appointments->where('appointment_date', '>=', now()->startOfDay())
+                                    ->where('status', '!=', 'cancelled')
+                                    ->sortBy('appointment_date')
+                                    ->first()?->appointment_date?->format('Y-m-d')
+                : null,
+            'medical_history' => $this->diseases ? $this->diseases->pluck('name')->toArray() : [],
+            'created_at' => $this->created_at->format('d-M-Y H:i:s'),
+            'updated_at' => $this->updated_at->format('d-M-Y H:i:s'),
         ];
     }
 }

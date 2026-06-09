@@ -18,9 +18,6 @@ class DiseaseController extends Controller
     public function index()
     {
         $diseases = $this->diseaseRepository->all();
-        return response()->json([
-            'status' => true,
-            'data' => DiseaseResource::collection($diseases),
-        ], 200);
+        return $this->successResponse(DiseaseResource::collection($diseases), 'Diseases retrieved successfully');
     }
 }
