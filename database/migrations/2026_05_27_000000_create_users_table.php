@@ -11,24 +11,17 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary()->default(DB::raw('uuid_generate_v4()'));
-
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-
+            $table->uuid('role_id')->index();
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
-
-            $table->uuid('role_id');
-            $table->integer('experience')->nullable(); // doctor only
-
+            $table->enum('status', ['active', 'inactive', 'pending'])->default('pending')->index();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('role_id')
-                ->references('id')
-                ->on('roles')
-                ->onDelete('cascade');
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -39,18 +32,13 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-
             $table->uuid('user_id')->nullable()->index();
-
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
             
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
