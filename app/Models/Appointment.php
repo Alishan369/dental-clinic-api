@@ -4,32 +4,50 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class Appointment extends Model
 {
-    use HasUuids;
-    protected $table = 'appointments';
+    use HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'id',
-        'patient_id',
-        'doctor_id',
-        'appointment_date',
-        'appointment_time',
-        'fee',
-        'status',
+        'patient_id', 'doctor_id', 'appointment_date', 'start_time', 'end_time', 'status',
+        'type', 'notes', 'cancelled_reason', 'created_by',
     ];
 
-    public $incrementing = false;
-    protected $keyType = 'string';
+    protected $casts = [
+        'appointment_date' => 'date',
+    ];
 
-    public function patient()
+    public function patient(): BelongsTo
     {
-        return $this->belongsTo(Patient::class, 'patient_id');
+        return $this->belongsTo(Patient::class);
     }
 
-    public function doctor()
+    public function doctor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'doctor_id');
+        return $this->belongsTo(Doctor::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function scopeToday($query)
+    {
+        return $query->whereDate('appointment_date', today());
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'scheduled');
+    }
+
+    public function getFormattedTimeAttribute()
+    {
+        return Carbon::parse($this->start_time)->format('h:i A') . ' - ' . Carbon::parse($this->end_time)->format('h:i A');
     }
 }

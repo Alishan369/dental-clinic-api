@@ -9,6 +9,7 @@ use App\Repositories\Contracts\PatientRepositoryInterface;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Http\Resources\PatientResource;
 use App\Http\Resources\AppointmentResource;
+use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
@@ -20,10 +21,10 @@ class PatientController extends Controller
         $this->patientRepository = $patientRepository;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $patients = $this->patientRepository->paginate();
+            $patients = $this->patientRepository->paginate($request->all());
             return PatientResource::collection($patients);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
@@ -104,11 +105,14 @@ class PatientController extends Controller
         try {
             $appointments = $this->patientRepository->appointments($id);
             if (!$appointments) {
-                return response()->json(['error' => 'Appointments not found'], HttpResponse::HTTP_NOT_FOUND);
+                return $this->errorResponse('Appointments not found', HttpResponse::HTTP_NOT_FOUND);
             }
-            return AppointmentResource::collection($appointments);
+            return $this->successResponse(
+                AppointmentResource::collection($appointments),
+                'Patient appointments retrieved successfully'
+            );
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->errorResponse($e->getMessage(), HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

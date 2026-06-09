@@ -17,14 +17,10 @@ class StorePatientRequest extends FormRequest
             'phone'            => 'required|string|max:20',
             'email'            => 'nullable|email',
             'address'          => 'nullable|string',
-            'doctor_id'        => 'nullable|exists:users,id',
-            'appointments'      => 'required|array|min:1',
-            'appointments.*.appointment_date' => 'required|date',
-            'appointments.*.appointment_time' => 'nullable|date_format:H:i',
-            'appointments.*.doctor_id'        => 'required|exists:users,id',
-            'diseases'         => 'nullable|array',
-            'diseases.*.id'    => 'required|exists:diseases,id',
-            'diseases.*.notes'          => 'nullable|string',
+            'dob'              => 'nullable|date',
+            'gender'           => 'nullable|string',
+            'disease_ids'      => 'nullable|array',
+            'disease_ids.*'    => 'exists:diseases,id',
         ];
     }
 }
