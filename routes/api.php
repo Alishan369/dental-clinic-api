@@ -8,12 +8,24 @@ use App\Http\Controllers\DiseaseController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\InstallmentController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\PatientHistoryController;
+use App\Http\Controllers\MedicalDocumentController;
+use App\Http\Controllers\PatientTreatmentController;
+use App\Http\Controllers\TreatmentTypeController;
 
 Route::get('/', fn() => response()->json(['message' => 'API Working!']));
 
 Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'auth'], function () {
+        Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
+        Route::prefix('roles')->group(function () {
+            Route::get('/', [RoleController::class, 'index']);
+        });
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);
             Route::get('me', [AuthController::class, 'me']);
@@ -25,8 +37,10 @@ Route::group(['prefix' => 'v1'], function () {
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::prefix('admin')->middleware('role:admin')->group(function () {
+            Route::get('users', [AdminController::class, 'index']);
             Route::post('users/{id}/accept', [AdminController::class, 'acceptUser']);
             Route::post('users/{id}/reject', [AdminController::class, 'rejectUser']);
+            Route::post('users/{id}/toggle', [AdminController::class, 'toggleUserStatus']);
         });
 
         /*
@@ -58,26 +72,26 @@ Route::group(['prefix' => 'v1'], function () {
             Route::put('/{id}', [PatientController::class, 'update']);
             Route::delete('/{id}', [PatientController::class, 'destroy']);
             Route::get('/{id}/appointments', [PatientController::class, 'appointments']);
-            Route::get('/{id}/history', [\App\Http\Controllers\PatientHistoryController::class, 'index']);
-            Route::post('/{id}/history', [\App\Http\Controllers\PatientHistoryController::class, 'store']);
-            Route::get('/{id}/documents', [\App\Http\Controllers\MedicalDocumentController::class, 'index']);
-            Route::post('/{id}/documents', [\App\Http\Controllers\MedicalDocumentController::class, 'store']);
-            Route::get('/{id}/treatments', [\App\Http\Controllers\PatientTreatmentController::class, 'index']);
-            Route::post('/{id}/treatments', [\App\Http\Controllers\PatientTreatmentController::class, 'store']);
+            Route::get('/{id}/history', [PatientHistoryController::class, 'index']);
+            Route::post('/{id}/history', [PatientHistoryController::class, 'store']);
+            Route::get('/{id}/documents', [MedicalDocumentController::class, 'index']);
+            Route::post('/{id}/documents', [MedicalDocumentController::class, 'store']);
+            Route::get('/{id}/treatments', [PatientTreatmentController::class, 'index']);
+            Route::post('/{id}/treatments', [PatientTreatmentController::class, 'store']);
         });
 
-        Route::delete('documents/{id}', [\App\Http\Controllers\MedicalDocumentController::class, 'destroy']);
+        Route::delete('documents/{id}', [MedicalDocumentController::class, 'destroy']);
 
         Route::prefix('diseases')->group(function () {
             Route::get('/', [DiseaseController::class, 'index']);
         });
 
         Route::prefix('treatment-types')->group(function () {
-            Route::get('/', [\App\Http\Controllers\TreatmentTypeController::class, 'index']);
-            Route::get('/{id}', [\App\Http\Controllers\TreatmentTypeController::class, 'show']);
-            Route::post('/', [\App\Http\Controllers\TreatmentTypeController::class, 'store']);
-            Route::put('/{id}', [\App\Http\Controllers\TreatmentTypeController::class, 'update']);
-            Route::delete('/{id}', [\App\Http\Controllers\TreatmentTypeController::class, 'destroy']);
+            Route::get('/', [TreatmentTypeController::class, 'index']);
+            Route::get('/{id}', [TreatmentTypeController::class, 'show']);
+            Route::post('/', [TreatmentTypeController::class, 'store']);
+            Route::put('/{id}', [TreatmentTypeController::class, 'update']);
+            Route::delete('/{id}', [TreatmentTypeController::class, 'destroy']);
         });
 
         Route::prefix('appointments')->group(function () {
@@ -91,22 +105,22 @@ Route::group(['prefix' => 'v1'], function () {
         });
 
         Route::prefix('payments')->group(function () {
-            Route::get('/', [\App\Http\Controllers\PaymentController::class, 'index']);
+            Route::get('/', [PaymentController::class, 'index']);
             // Named routes MUST come before the /{id} wildcard to avoid routing conflicts
-            Route::get('/pending', [\App\Http\Controllers\PaymentController::class, 'getPendingPayments']);
-            Route::get('/overdue', [\App\Http\Controllers\PaymentController::class, 'getOverduePayments']);
-            Route::get('/daily-closing', [\App\Http\Controllers\PaymentController::class, 'getDailyClosing']);
-            Route::post('/record', [\App\Http\Controllers\PaymentController::class, 'recordPayment']);
-            Route::post('/installment-plan', [\App\Http\Controllers\PaymentController::class, 'addInstallmentPlan']);
+            Route::get('/pending', [PaymentController::class, 'getPendingPayments']);
+            Route::get('/overdue', [PaymentController::class, 'getOverduePayments']);
+            Route::get('/daily-closing', [PaymentController::class, 'getDailyClosing']);
+            Route::post('/record', [PaymentController::class, 'recordPayment']);
+            Route::post('/installment-plan', [PaymentController::class, 'addInstallmentPlan']);
             // Wildcard route last
-            Route::get('/{id}', [\App\Http\Controllers\PaymentController::class, 'show']);
-            Route::post('/', [\App\Http\Controllers\PaymentController::class, 'store']);
+            Route::get('/{id}', [PaymentController::class, 'show']);
+            Route::post('/', [PaymentController::class, 'store']);
         });
 
         Route::prefix('installments')->group(function () {
-            Route::post('/{id}/pay', [\App\Http\Controllers\InstallmentController::class, 'pay']);
-            Route::get('/overdue', [\App\Http\Controllers\InstallmentController::class, 'getOverdue']);
-            Route::get('/upcoming', [\App\Http\Controllers\InstallmentController::class, 'getUpcoming']);
+            Route::post('/{id}/pay', [InstallmentController::class, 'pay']);
+            Route::get('/overdue', [InstallmentController::class, 'getOverdue']);
+            Route::get('/upcoming', [InstallmentController::class, 'getUpcoming']);
         });
 
         Route::prefix('dashboard')->group(function () {
@@ -127,16 +141,16 @@ Route::group(['prefix' => 'v1'], function () {
          */
         Route::prefix('reports')->group(function () {
             // Data reports (JSON)
-            Route::get('/daily-collection', [\App\Http\Controllers\ReportController::class, 'dailyCollection']);
-            Route::get('/monthly-summary', [\App\Http\Controllers\ReportController::class, 'monthlySummary']);
-            Route::get('/doctor-commission', [\App\Http\Controllers\ReportController::class, 'doctorCommission']);
-            Route::get('/patient-summary', [\App\Http\Controllers\ReportController::class, 'patientSummary']);
+            Route::get('/daily-collection', [ReportController::class, 'dailyCollection']);
+            Route::get('/monthly-summary', [ReportController::class, 'monthlySummary']);
+            Route::get('/doctor-commission', [ReportController::class, 'doctorCommission']);
+            Route::get('/patient-summary', [ReportController::class, 'patientSummary']);
 
             // Export (download) reports
-            Route::get('/export/payments', [\App\Http\Controllers\ReportController::class, 'exportPayments']);
-            Route::get('/export/appointments', [\App\Http\Controllers\ReportController::class, 'exportAppointments']);
-            Route::get('/export/patients', [\App\Http\Controllers\ReportController::class, 'exportPatients']);
-            Route::get('/export/doctors', [\App\Http\Controllers\ReportController::class, 'exportDoctors']);
+            Route::get('/export/payments', [ReportController::class, 'exportPayments']);
+            Route::get('/export/appointments', [ReportController::class, 'exportAppointments']);
+            Route::get('/export/patients', [ReportController::class, 'exportPatients']);
+            Route::get('/export/doctors', [ReportController::class, 'exportDoctors']);
         });
 
     });

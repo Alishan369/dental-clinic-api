@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('medical_documents', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('id')->primary();
             $table->uuid('patient_id');
             $table->string('type'); // 'x-ray', 'report', 'prescription'
             $table->string('file_name');
