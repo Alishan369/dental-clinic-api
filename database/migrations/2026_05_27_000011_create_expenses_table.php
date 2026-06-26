@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('expenses', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('uuid_generate_v4()'));
+$table->uuid('id')->primary();
             $table->enum('category', ['rent', 'salary', 'equipment', 'utility', 'other'])->index();
             $table->decimal('amount', 10, 2);
             $table->date('date')->index();
