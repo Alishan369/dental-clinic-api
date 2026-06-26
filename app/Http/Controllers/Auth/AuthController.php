@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Role;
+use App\Repositories\Contracts\AuthRepositoryInterface;
 
 class AuthController extends Controller
 {
+    public function __construct(private AuthRepositoryInterface $authRepository) {}
+
     public function login(LoginRequest $request)
     {
         $email = strtolower($request->email);
@@ -37,8 +41,9 @@ class AuthController extends Controller
                 'id'    => $user->id,
                 'name'  => $user->name,
                 'email' => $user->email,
+                'role_id' => $user->role_id,
                 'role'  => $user->role ? $user->role->name : null,
-                'status'=> $user->status,
+                'status' => $user->status,
             ]
         ], 'Logged in successfully');
     }
@@ -51,14 +56,14 @@ class AuthController extends Controller
             'name'  => $user->name,
             'email' => $user->email,
             'role'  => $user->role ? $user->role->name : null,
-            'status'=> $user->status,
+            'status' => $user->status,
         ], 'Profile retrieved successfully');
     }
 
     public function updateProfile(Request $request)
     {
         $user = $request->user();
-        
+
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
@@ -71,7 +76,7 @@ class AuthController extends Controller
             'name'  => $user->name,
             'email' => $user->email,
             'role'  => $user->role ? $user->role->name : null,
-            'status'=> $user->status,
+            'status' => $user->status,
         ], 'Profile updated successfully');
     }
 
@@ -93,6 +98,20 @@ class AuthController extends Controller
         ]);
 
         return $this->successResponse(null, 'Password changed successfully');
+    }
+
+    public function register(RegisterRequest $request)
+    {
+        $user = $this->authRepository->register($request->validated());
+
+        return $this->successResponse([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role_id' => $user->role_id,
+            'role' => $user->role ? $user->role->name : null,
+            'status' => $user->status,
+        ], 'Registration submitted. Pending approval.');
     }
 
     public function logout(Request $request)
