@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payment_installments', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('uuid_generate_v4()'));
+$table->uuid('id')->primary();
             $table->uuid('payment_id')->index();
             $table->date('due_date')->index();
             $table->decimal('amount', 10, 2);
